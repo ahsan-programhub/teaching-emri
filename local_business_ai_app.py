@@ -398,6 +398,90 @@ def fetch_leads(count=5):
     return leads
 
 
+# ── Business Info Templates (updates when dropdown changes) ──────────────────
+BIZ_TEMPLATES = {
+    "Plumbing & Emergency Repair": {
+        "name": "Visser Plumbing",
+        "city": "Amsterdam",
+        "info": """Business: Visser Plumbing, Amsterdam
+Services: Emergency plumbing, pipe repair, boiler installation, drain unblocking
+Hours: Mon–Fri 8am–6pm | Sat 9am–2pm | Sun closed
+Emergency: 24/7 for burst pipes and urgent leaks
+Response: Within 2 hours for emergencies | Same-day for standard jobs
+Pricing: Free quote | No call-out fee for estimates"""
+    },
+    "Electrical Services": {
+        "name": "Spark Electrical",
+        "city": "Rotterdam",
+        "info": """Business: Spark Electrical, Rotterdam
+Services: Wiring, fuse board upgrades, EV charger installation, fault finding, lighting
+Hours: Mon–Fri 7:30am–5:30pm | Sat 8am–1pm | Sun closed
+Emergency: 24/7 callout for power failures and electrical faults
+Response: Same-day for emergencies | Next-day for standard
+Pricing: Free quote | Fixed-price jobs available"""
+    },
+    "Dental Practice": {
+        "name": "Smile Studio",
+        "city": "Utrecht",
+        "info": """Business: Smile Studio Dental Practice, Utrecht
+Services: Check-ups, teeth whitening, fillings, extractions, implants, Invisalign
+Hours: Mon–Fri 8am–6pm | Sat 9am–1pm | Sun closed
+Emergency: Same-day slots available for dental pain and broken teeth
+New patients: Welcome — book online or call
+Pricing: NHS and private options available | Free consultation for implants"""
+    },
+    "Physiotherapy Clinic": {
+        "name": "Motion Physio",
+        "city": "The Hague",
+        "info": """Business: Motion Physiotherapy Clinic, The Hague
+Services: Sports injuries, back and neck pain, post-surgery rehab, massage therapy
+Hours: Mon–Fri 7am–8pm | Sat 8am–3pm | Sun closed
+Appointments: Online booking available | Same-week slots usually available
+Session length: 30 or 60 minutes
+Pricing: From €55 per session | Health insurance accepted"""
+    },
+    "Hair Salon & Beauty": {
+        "name": "Studio Noir",
+        "city": "Amsterdam",
+        "info": """Business: Studio Noir Hair & Beauty, Amsterdam
+Services: Haircuts, colour, balayage, keratin treatments, nails, eyebrow threading
+Hours: Tue–Sat 9am–7pm | Sun 10am–5pm | Mon closed
+Booking: Walk-ins welcome if available | Online booking recommended
+Team: 6 senior stylists | All colour treatments by appointment
+Pricing: Cuts from €35 | Colour from €75 | Free consultation for first colour"""
+    },
+    "Auto Repair Shop": {
+        "name": "AutoFix Garage",
+        "city": "Eindhoven",
+        "info": """Business: AutoFix Garage, Eindhoven
+Services: MOT/APK, servicing, brakes, tyres, diagnostics, bodywork, air conditioning
+Hours: Mon–Fri 8am–6pm | Sat 8am–2pm | Sun closed
+Turnaround: Most jobs same-day | Courtesy car available on request
+Brands: All makes and models | Specialists in German and Japanese vehicles
+Pricing: Free diagnostic check | No hidden charges | Written quote before any work"""
+    },
+    "Personal Training & Gym": {
+        "name": "Peak Performance",
+        "city": "Groningen",
+        "info": """Business: Peak Performance Gym & PT, Groningen
+Services: Personal training, group classes, nutrition coaching, body transformation
+Hours: Mon–Fri 6am–10pm | Sat–Sun 7am–8pm
+Membership: Monthly rolling | No long contracts | Day passes available
+Personal training: 1-on-1 and small group sessions | First session free
+Classes: HIIT, yoga, spin, strength — full schedule online"""
+    },
+    "Restaurant & Catering": {
+        "name": "Casa Mia",
+        "city": "Maastricht",
+        "info": """Business: Casa Mia Italian Restaurant, Maastricht
+Services: Dine-in, takeaway, private dining, catering for events
+Hours: Tue–Sun 12pm–10pm | Mon closed | Kitchen closes 9:30pm
+Reservations: Recommended for weekends | Walk-ins welcome weekdays
+Capacity: 60 covers | Private room for up to 20 guests
+Menu: Fresh pasta, wood-fired pizza, seasonal specials | Vegetarian options available"""
+    }
+}
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
@@ -424,18 +508,13 @@ with st.sidebar:
     st.markdown('<div style="font-size:0.72rem; color:#888; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">Business Profile</div>',
                 unsafe_allow_html=True)
 
-    biz_name = st.text_input("Business Name", value="Visser Plumbing")
-    biz_type = st.selectbox("Service Type", [
-        "Plumbing & Emergency Repair",
-        "Electrical Services",
-        "Dental Practice",
-        "Physiotherapy Clinic",
-        "Hair Salon & Beauty",
-        "Auto Repair Shop",
-        "Personal Training & Gym",
-        "Restaurant & Catering"
-    ])
-    biz_city = st.text_input("City", value="Amsterdam")
+    biz_type = st.selectbox("Service Type", list(BIZ_TEMPLATES.keys()))
+
+    # Auto-populate name and city from the selected template
+    # User can still override by typing in the boxes
+    template = BIZ_TEMPLATES[biz_type]
+    biz_name = st.text_input("Business Name", value=template["name"])
+    biz_city = st.text_input("City", value=template["city"])
 
     st.markdown("<hr style='border-color:#2a2a2a; margin:16px 0;'>", unsafe_allow_html=True)
     st.markdown("""
@@ -743,22 +822,17 @@ with tab4:
         """, unsafe_allow_html=True)
 
         biz_info = st.text_area(
-            "Business info (AI uses ONLY this)",
-            value=f"""Business: {biz_name}, {biz_city}
-Services: Emergency repair, maintenance, installation, inspection
-Hours: Mon–Fri 8am–6pm | Sat 9am–2pm | Sun closed
-Emergency: 24/7 for urgent situations
-Response: 2hrs for emergencies | Same-day standard
-Pricing: Free quote | No call-out fee for estimates""",
+            "Business info (AI uses this as context)",
+            value=template["info"],
             height=200,
             label_visibility="collapsed"
         )
 
         st.markdown("""
         <div class="code-note">
-        The AI answers ONLY from this text.<br>
-        It cannot invent prices or services.<br>
-        Safe to deploy on a real client's website.
+        Edit this box and re-ask a question.<br>
+        Watch how the AI changes its answers.<br>
+        Try putting something completely made up in here 👀
         </div>
         """, unsafe_allow_html=True)
 
@@ -835,9 +909,9 @@ Pricing: Free quote | No call-out fee for estimates""",
                 st.session_state["chat"].append({"role": "user", "text": q})
                 system_prompt = (
                     f"You are the AI assistant for {biz_name} in {biz_city}. "
-                    f"Answer using ONLY this info:\n{biz_info}\n"
-                    f"If the answer is not there: 'Let me check with the team.' "
-                    f"Under 60 words. End with a next step. Warm and helpful."
+                    f"Here is information about the business:\n{biz_info}\n"
+                    f"Be helpful, conversational, and engaging. "
+                    f"Keep responses under 80 words."
                 )
                 with st.spinner(""):
                     ans = call_groq(groq_key, system_prompt, q, max_tokens=150)
