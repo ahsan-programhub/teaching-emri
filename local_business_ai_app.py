@@ -510,8 +510,11 @@ with st.sidebar:
 
     biz_type = st.selectbox("Service Type", list(BIZ_TEMPLATES.keys()))
 
-    # Auto-populate name and city from the selected template
-    # User can still override by typing in the boxes
+    # Track dropdown changes — forces text area to re-render and clears chat
+    if st.session_state.get("last_biz_type") != biz_type:
+        st.session_state["last_biz_type"] = biz_type
+        st.session_state["chat"] = []
+
     template = BIZ_TEMPLATES[biz_type]
     biz_name = st.text_input("Business Name", value=template["name"])
     biz_city = st.text_input("City", value=template["city"])
@@ -706,13 +709,15 @@ with tab2:
                         f"Service: {biz_type}"
                     )
 
+                import html as _html
+                safe_msg = _html.escape(msg).replace('\n', '<br>')
                 st.markdown(f"""
                 <div class="ai-output">
                     <div class="ai-output-header">
                         <div class="ai-chip">AI Generated</div>
                         <div class="ai-output-to">TO: {lead['email']}</div>
                     </div>
-                    <div class="ai-output-text">{msg}</div>
+                    <div class="ai-output-text">{safe_msg}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -825,6 +830,7 @@ with tab4:
             "Business info (AI uses this as context)",
             value=template["info"],
             height=200,
+            key=f"biz_info_{biz_type}",
             label_visibility="collapsed"
         )
 
@@ -874,11 +880,16 @@ with tab4:
 
         if chat_html:
             st.markdown(f"""
-            <div style="background:white; border:1px solid #e0ddd8; border-radius:10px;
+            <div id="chat-box" style="background:white; border:1px solid #e0ddd8; border-radius:10px;
                         padding:16px; min-height:200px; max-height:340px;
                         overflow-y:auto; margin-bottom:12px;">
                 {chat_html}
+                <div id="chat-end"></div>
             </div>
+            <script>
+                const el = window.parent.document.getElementById('chat-end');
+                if (el) el.scrollIntoView();
+            </script>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
@@ -889,8 +900,12 @@ with tab4:
             </div>
             """, unsafe_allow_html=True)
 
+        if "input_counter" not in st.session_state:
+            st.session_state["input_counter"] = 0
+
         user_input = st.text_input("Message", placeholder="Ask the chatbot...",
-                                   key="chat_input", label_visibility="collapsed")
+                                   key=f"chat_input_{st.session_state['input_counter']}",
+                                   label_visibility="collapsed")
         c1, c2 = st.columns([3, 1])
         with c1:
             send = st.button("Send", key="send_chat", use_container_width=True)
@@ -916,4 +931,5 @@ with tab4:
                 with st.spinner(""):
                     ans = call_groq(groq_key, system_prompt, q, max_tokens=150)
                 st.session_state["chat"].append({"role": "bot", "text": ans})
+                st.session_state["input_counter"] += 1
                 st.rerun()
